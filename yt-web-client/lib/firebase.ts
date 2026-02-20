@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
-import { Auth, getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getAnalytics, isSupported } from "firebase/analytics";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -8,50 +9,38 @@ const firebaseConfig = {
   storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-export const isFirebaseConfigured = Object.values(firebaseConfig).every(Boolean);
+const requiredConfig = {
+  apiKey: firebaseConfig.apiKey,
+  authDomain: firebaseConfig.authDomain,
+  projectId: firebaseConfig.projectId,
+  storageBucket: firebaseConfig.storageBucket,
+  messagingSenderId: firebaseConfig.messagingSenderId,
+  appId: firebaseConfig.appId,
+};
 
-let authInstance: Auth | null = null;
-let providerInstance: GoogleAuthProvider | null = null;
+export const isFirebaseConfigured = Object.values(requiredConfig).every(Boolean);
 
-function getFirebaseApp() {
-  if (!isFirebaseConfigured) {
-    return null;
-  }
-
-  return getApps().length
+export const app = isFirebaseConfigured
+  ? getApps().length
     ? getApp()
-    : initializeApp(firebaseConfig as Record<string, string>);
-}
+    : initializeApp(firebaseConfig as Record<string, string>)
+  : null;
 
-export function getFirebaseAuth() {
-  if (typeof window === "undefined") {
+export const auth = app ? getAuth(app) : null;
+export const googleProvider = auth ? new GoogleAuthProvider() : null;
+
+googleProvider?.setCustomParameters({
+  prompt: "select_account",
+});
+
+export async function getFirebaseAnalytics() {
+  if (!app || !firebaseConfig.measurementId || typeof window === "undefined") {
     return null;
   }
 
-  if (authInstance) {
-    return authInstance;
-  }
-
-  const app = getFirebaseApp();
-  if (!app) {
-    return null;
-  }
-
-  authInstance = getAuth(app);
-  return authInstance;
-}
-
-export function getGoogleProvider() {
-  if (providerInstance) {
-    return providerInstance;
-  }
-
-  providerInstance = new GoogleAuthProvider();
-  providerInstance.setCustomParameters({
-    prompt: "select_account",
-  });
-
-  return providerInstance;
+  const supported = await isSupported();
+  return supported ? getAnalytics(app) : null;
 }

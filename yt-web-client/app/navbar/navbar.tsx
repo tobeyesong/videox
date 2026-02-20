@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { User, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
-import { getFirebaseAuth, getGoogleProvider, isFirebaseConfigured } from "@/lib/firebase";
+import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
@@ -11,11 +11,6 @@ export default function Navbar() {
   const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      return;
-    }
-
-    const auth = getFirebaseAuth();
     if (!auth) {
       return;
     }
@@ -28,22 +23,15 @@ export default function Navbar() {
   }, []);
 
   async function handleGoogleSignIn() {
-    if (!isFirebaseConfigured) {
-      setAuthError("Missing Firebase env vars. Add NEXT_PUBLIC_FIREBASE_* values.");
+    if (!isFirebaseConfigured || !auth || !googleProvider) {
+      setAuthError("Missing Firebase env vars. Configure NEXT_PUBLIC_FIREBASE_*.");
       return;
     }
 
     try {
       setIsPending(true);
       setAuthError("");
-
-      const auth = getFirebaseAuth();
-      if (!auth) {
-        setAuthError("Firebase auth is unavailable in this runtime.");
-        return;
-      }
-
-      await signInWithPopup(auth, getGoogleProvider());
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sign-in failed";
       setAuthError(message);
@@ -53,16 +41,14 @@ export default function Navbar() {
   }
 
   async function handleSignOut() {
+    if (!auth) {
+      setAuthError("Firebase auth is not initialized.");
+      return;
+    }
+
     try {
       setIsPending(true);
       setAuthError("");
-
-      const auth = getFirebaseAuth();
-      if (!auth) {
-        setAuthError("Firebase auth is unavailable in this runtime.");
-        return;
-      }
-
       await signOut(auth);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sign-out failed";
