@@ -31,3 +31,16 @@ Emulator UI: `http://127.0.0.1:4000`
 cd yt-api-service
 firebase deploy --only functions
 ```
+
+To deploy only the auth user writer:
+
+```bash
+cd yt-api-service/functions
+npm run deploy:create-user -- --project videox-2a530
+```
+
+## Auth Trigger Note
+
+- `createUser` uses `firebase-functions/v1` auth trigger syntax intentionally.
+- Firebase Auth post-create/post-delete triggers do not currently have a v2 equivalent.
+- Console UI now routes function management through Cloud Run, but this auth trigger remains a v1 deployment model.

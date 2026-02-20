@@ -10,6 +10,7 @@
     "serve": "npm run build && firebase emulators:start --only functions,auth,firestore",
     "start": "npm run serve",
     "deploy": "firebase deploy --only functions",
+    "deploy:create-user": "firebase deploy --only functions:createUser",
     "logs": "firebase functions:log"
   },
   "dependencies": {
