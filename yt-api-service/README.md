@@ -44,3 +44,14 @@ npm run deploy:create-user -- --project videox-2a530
 - `createUser` uses `firebase-functions/v1` auth trigger syntax intentionally.
 - Firebase Auth post-create/post-delete triggers do not currently have a v2 equivalent.
 - Console UI now routes function management through Cloud Run, but this auth trigger remains a v1 deployment model.
+
+## Current Status
+
+- `createUser` auth trigger is deployed and active in `us-west1`.
+- Firestore user document write (`users/{uid}`) is implemented and tested.
+
+## To Do
+
+- Add signed URL generation endpoint for video upload.
+- Add metadata read/list endpoints for the web client watch/home pages.
+- Add basic integration tests for Auth trigger + Firestore write.

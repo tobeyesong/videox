@@ -13,6 +13,7 @@ A YouTube clone with serverless video transcoding. Built to learn scalable video
 - **Queue:** Cloud Pub/Sub (decouples upload from processing)
 - **Metadata:** Firestore (video info, processing status, user data)
 - **Auth:** Firebase Auth (Google Sign-In)
+- **API:** Firebase Functions (auth user sync + upload/metadata endpoints)
 
 ## What I Built
 
@@ -48,7 +49,8 @@ TypeScript        |  Type safety across stack
 |-----------|--------|
 | Video Processing Service | ✅ Complete |
 | Cloud Infrastructure (GCS, Pub/Sub, Cloud Run) | ✅ Complete |
-| Firebase Auth Integration | 🚧 In Progress |
+| Firebase Auth Integration (Google Sign-In + user sync) | ✅ Complete |
+| Firebase `createUser` Function Deployment | ✅ Complete (`us-west1`) |
 | Next.js Web Client | 🚧 In Progress |
 | Upload UI | ⏳ Pending |
 | Video Player / Watch Page | ⏳ Pending |
@@ -79,6 +81,9 @@ gcloud run deploy video-processor --source ./video-service
 
 ## Future Work
 
+- [ ] Build navbar + upload flow in web client (Tailwind)
+- [ ] Connect upload UI to signed URL endpoint
+- [ ] Wire watch page to video metadata API
 - [ ] Add video player with adaptive bitrate streaming
 - [ ] Implement upload quotas per user
 - [ ] Content moderation (thumbnail extraction + ML classification)
