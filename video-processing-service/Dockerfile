@@ -1,5 +1,5 @@
-# Use the official Node.js 18 image as the base image
-FROM node:18
+# Use a Node.js runtime that satisfies firebase-admin's current engine requirements.
+FROM node:20
 
 # Set the working directory to /app
 WORKDIR /app

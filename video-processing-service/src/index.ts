@@ -7,6 +7,7 @@ import {
   deleteRawVideo,
   deleteProcessedVideo
 } from './storage';
+import { claimVideoForProcessing, clearProcessingState, setVideo } from './firestore';
 
 setupDirectories();
 
@@ -14,8 +15,33 @@ const app  = express();
 
 app.use(express.json());
 
+async function cleanupLocalFiles(inputFileName: string, outputFileName: string) {
+  const cleanupResults = await Promise.allSettled([
+    deleteRawVideo(inputFileName),
+    deleteProcessedVideo(outputFileName),
+  ]);
+
+  cleanupResults.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      const fileName = index === 0 ? inputFileName : outputFileName;
+      console.error(`Cleanup error for ${fileName}:`, result.reason);
+    }
+  });
+}
+
+function getVideoId(fileName: string) {
+  const extensionIndex = fileName.lastIndexOf('.');
+  return extensionIndex === -1 ? fileName : fileName.slice(0, extensionIndex);
+}
+
+function getUidFromVideoId(videoId: string) {
+  const separatorIndex = videoId.indexOf('-');
+  return separatorIndex === -1 ? videoId : videoId.slice(0, separatorIndex);
+}
+
 app.post('/process-video', async (req, res) => {
   let data;
+  let shouldCleanupLocalFiles = false;
   try {
     const message = Buffer.from(req.body.message.data, 'base64').toString('utf8');
     data = JSON.parse(message);
@@ -29,8 +55,19 @@ app.post('/process-video', async (req, res) => {
 
   const inputFileName = data.name;
   const outputFileName = `processed-${inputFileName}`;
+  const videoId = getVideoId(inputFileName);
+  const uid = getUidFromVideoId(videoId);
 
   try {
+    const isClaimed = await claimVideoForProcessing(videoId, uid);
+
+    if (!isClaimed) {
+      console.log(`Skipping duplicate processing request for ${videoId}.`);
+      return res.status(200).send('Duplicate message ignored.');
+    }
+
+    shouldCleanupLocalFiles = true;
+
     // Download the raw video from Cloud Storage
     console.log(`Downloading ${inputFileName}...`);
     await downloadRawVideo(inputFileName);
@@ -42,27 +79,28 @@ app.post('/process-video', async (req, res) => {
     // Upload the processed video to Cloud Storage
     console.log(`Uploading ${outputFileName}...`);
     await uploadProcessedVideo(outputFileName);
-    
-    // Cleanup
-    console.log('Cleaning up local files...');
-    await Promise.all([
-      deleteRawVideo(inputFileName),
-      deleteProcessedVideo(outputFileName)
-    ]);
 
+    await setVideo(videoId, {
+      filename: outputFileName,
+      status: 'processed',
+    });
+    
     console.log('Video processing complete!');
     return res.status(200).send('Video processed successfully.');
     
   } catch (error) {
     console.error('Error processing video:', error);
-    
-    // Cleanup on error
-    await Promise.all([
-      deleteRawVideo(inputFileName),
-      deleteProcessedVideo(outputFileName)
-    ]).catch(err => console.error('Cleanup error:', err));
+
+    await clearProcessingState(videoId).catch((firestoreError) => {
+      console.error(`Error clearing processing state for ${videoId}:`, firestoreError);
+    });
     
     return res.status(500).send('Error processing video.');
+  } finally {
+    if (shouldCleanupLocalFiles) {
+      console.log('Cleaning up local files...');
+      await cleanupLocalFiles(inputFileName, outputFileName);
+    }
   }
 });
 
