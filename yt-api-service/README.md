@@ -39,6 +39,13 @@ cd yt-api-service/functions
 npm run deploy:create-user -- --project videox-2a530
 ```
 
+To deploy only the signed upload URL callable:
+
+```bash
+cd yt-api-service/functions
+npm run deploy:generate-upload-url -- --project videox-2a530
+```
+
 ## Auth Trigger Note
 
 - `createUser` uses `firebase-functions/v1` auth trigger syntax intentionally.
@@ -49,9 +56,32 @@ npm run deploy:create-user -- --project videox-2a530
 
 - `createUser` auth trigger is deployed and active in `us-west1`.
 - Firestore user document write (`users/{uid}`) is implemented and tested.
+- `generateUploadUrl` callable is implemented for authenticated raw video uploads.
 
 ## To Do
 
-- Add signed URL generation endpoint for video upload.
 - Add metadata read/list endpoints for the web client watch/home pages.
 - Add basic integration tests for Auth trigger + Firestore write.
+
+## Signed Upload Function
+
+- `generateUploadUrl` is a v2 callable in `us-west1`.
+- It requires Firebase Authentication and returns a 15-minute v4 signed URL plus the generated file name.
+- The raw upload bucket defaults to `tpl-raw-videos`. Override it with the `RAW_VIDEO_BUCKET` environment variable if your bucket name differs.
+
+## Required GCP Permissions
+
+After deploy, grant the Cloud Functions service account access to the raw upload bucket:
+
+1. Open the `generateUploadUrl` function details and copy its service account email.
+2. In Cloud Storage, grant that principal `Storage Object Admin` on the raw videos bucket.
+3. In IAM, grant the same principal the `Service Account Token Creator` role.
+
+Without both permissions, signed URL generation will fail even though the function deploys successfully.
+
+## References
+
+- Signed URLs: https://cloud.google.com/storage/docs/access-control/signed-urls
+- Create Signed URL: https://cloud.google.com/storage/docs/samples/storage-generate-upload-signed-url-v4#storage_generate_upload_signed_url_v4-nodejs
+- Firebase Functions v1 vs v2: https://firebase.google.com/docs/functions/version-comparison
+- Cloud Functions v1 vs v2: https://cloud.google.com/functions/docs/concepts/version-comparison

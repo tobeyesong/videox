@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { User, onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
+import Upload from "./upload";
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
@@ -73,6 +74,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {user ? (
             <>
+              <Upload />
               <span className="hidden text-sm text-zinc-700 md:inline">
                 {user.displayName ?? user.email ?? "Signed in"}
               </span>

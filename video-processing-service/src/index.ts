@@ -7,7 +7,6 @@ import {
   deleteRawVideo,
   deleteProcessedVideo
 } from './storage';
-import { upload } from '@google-cloud/storage/build/cjs/src/resumable-upload';
 
 setupDirectories();
 

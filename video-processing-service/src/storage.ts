@@ -7,6 +7,7 @@ const storage = new Storage();
 
 const rawVideoBucketName = 'tpl-raw-videos';
 const processedVideoBucketName = 'tpl-processed-videos';
+const processedVideoMaxDimension = 360;
 
 const localRawVideoPath = './raw-videos';
 const localProcessedVideoPath = './processed-videos';
@@ -29,9 +30,13 @@ export function setupDirectories() {
 export function convertVideo(rawVideoName: string, processedVideoName: string) {
   return new Promise<void>((resolve, reject) => {
     const outputFilePath = `${localProcessedVideoPath}/${processedVideoName}`;
+    const scaleFilter =
+      `scale='if(gte(iw,ih),-2,${processedVideoMaxDimension})':` +
+      `'if(gte(iw,ih),${processedVideoMaxDimension},-2)',setsar=1:1`;
     
     ffmpeg(`${localRawVideoPath}/${rawVideoName}`)
-      .outputOptions('-vf', 'scale=-1:360')
+      // Keep the longest displayed edge at 360px and force even dimensions for H.264 output.
+      .outputOptions('-vf', scaleFilter)
       .on('end', () => {
         console.log(`Video processed successfully. Saved to ${outputFilePath}`);
         resolve(); 
