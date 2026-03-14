@@ -1,6 +1,7 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -30,6 +31,7 @@ export const app = isFirebaseConfigured
   : null;
 
 export const auth = app ? getAuth(app) : null;
+export const functions = app ? getFunctions(app, "us-west1") : null;
 export const googleProvider = auth ? new GoogleAuthProvider() : null;
 
 googleProvider?.setCustomParameters({

@@ -1,5 +1,5 @@
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { app, isFirebaseConfigured } from "@/lib/firebase";
+import { httpsCallable } from "firebase/functions";
+import { functions, isFirebaseConfigured } from "@/lib/firebase";
 
 type GenerateUploadUrlRequest = {
   fileExtension: string;
@@ -10,12 +10,23 @@ type GenerateUploadUrlResponse = {
   url: string;
 };
 
-const functions = app ? getFunctions(app, "us-west1") : null;
+export interface Video {
+  id?: string;
+  uid?: string;
+  filename?: string;
+  status?: "processing" | "processed";
+  title?: string;
+  description?: string;
+}
+
 const generateUploadUrlFunction = functions
   ? httpsCallable<GenerateUploadUrlRequest, GenerateUploadUrlResponse>(
       functions,
       "generateUploadUrl",
     )
+  : null;
+const getVideosFunction = functions
+  ? httpsCallable<Record<string, never>, Video[]>(functions, "getVideos")
   : null;
 
 export async function uploadVideo(file: File) {
@@ -45,4 +56,13 @@ export async function uploadVideo(file: File) {
     fileName: response.data.fileName,
     status: uploadResult.status,
   };
+}
+
+export async function getVideos() {
+  if (!isFirebaseConfigured || !getVideosFunction) {
+    throw new Error("Firebase functions is not initialized.");
+  }
+
+  const response = await getVideosFunction({});
+  return response.data;
 }
