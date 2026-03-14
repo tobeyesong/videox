@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# yt-web-client
 
-## Getting Started
+Next.js 16 frontend for VideoX.
 
-First, run the development server:
+## What It Does
+
+- Initializes Firebase Web SDK from `NEXT_PUBLIC_FIREBASE_*` environment variables
+- Supports Google sign-in and sign-out with Firebase Auth
+- Shows an upload action in the navbar for authenticated users
+- Calls the `generateUploadUrl` Firebase callable in `us-west1`
+- Calls the `getVideos` Firebase callable in `us-west1`
+- Uploads the selected video directly from the browser to Cloud Storage with the signed URL
+- Renders a basic home feed of processed videos
+- Renders a watch page player from the `?v=` query param
+
+## Current Routes
+
+- `/`: Server-rendered video feed using the first 10 Firestore videos
+- `/watch`: Client-side video player page using the processed file name from `?v=`
+
+## Prerequisites
+
+- Node.js 20+ recommended
+- A Firebase project with Auth enabled for Google sign-in
+- The `generateUploadUrl` function deployed in `us-west1`
+- CORS enabled on the raw upload bucket using `../utils/gcs-cors.json`
+
+## Environment Setup
+
+Copy `.env.example` to `.env.local` and fill in the Firebase web config:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Required values:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Optional:
 
-## Learn More
+- `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`
 
-To learn more about Next.js, take a look at the following resources:
+If the required values are missing, sign-in and upload attempts will fail fast and surface an error message in the UI.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Local Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm install
+npm run dev
+```
 
-## Deploy on Vercel
+Then open [http://localhost:3000](http://localhost:3000).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Upload Flow
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Sign in with Google from the navbar.
+2. Choose a video file from the upload button.
+3. The client requests a signed upload URL from Firebase Functions.
+4. The browser performs a direct `PUT` upload to the raw Cloud Storage bucket.
+5. The API returns the generated file name, and the UI shows a completion alert.
+
+## Current Gaps
+
+- No pagination, ordering, or personalized recommendations in the feed yet
+- No progress bar or resumable upload support yet
+- No titles, descriptions, or real thumbnails shown in the UI yet
+
+## Scripts
+
+- `npm run dev`: Start the Next.js dev server
+- `npm run build`: Build for production
+- `npm run start`: Run the production server
+- `npm run lint`: Run ESLint
