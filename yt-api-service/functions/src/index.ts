@@ -10,7 +10,17 @@ const firestore = getFirestore();
 const storage = new Storage();
 
 const rawVideoBucketName = process.env.RAW_VIDEO_BUCKET || "tpl-raw-videos";
+const videoCollectionId = "videos";
 const fileExtensionPattern = /^[a-z0-9]+$/i;
+
+export interface Video {
+  id?: string;
+  uid?: string;
+  filename?: string;
+  status?: "processing" | "processed";
+  title?: string;
+  description?: string;
+}
 
 /**
  * Firebase Auth user lifecycle events are still supported through v1 auth triggers.
@@ -80,5 +90,16 @@ export const generateUploadUrl = onCall(
     });
 
     return { url, fileName };
+  },
+);
+
+export const getVideos = onCall(
+  {
+    maxInstances: 1,
+    region: "us-west1",
+  },
+  async (): Promise<Video[]> => {
+    const querySnapshot = await firestore.collection(videoCollectionId).limit(10).get();
+    return querySnapshot.docs.map((doc) => doc.data() as Video);
   },
 );
